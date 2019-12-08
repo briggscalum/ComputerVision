@@ -230,7 +230,8 @@ while(True):
 
 
 	_ , bigwhite = cv.threshold(gray, 150, 255, cv.THRESH_BINARY) ## Will try and correct for lighting:  + cv.THRESH_OTSU
-
+	invert = -gray
+	_ , bigblack = cv.threshold(invert, 210, 255, cv.THRESH_BINARY) ## Will try and correct for lighting:  + cv.THRESH_OTSU
 	#contours , _ = cv.findContours(bw, cv.RETR_LIST, cv.CHAIN_APPROX_NONE)
 	center = 0    
 
@@ -271,6 +272,7 @@ while(True):
 	cv.imshow('Yellow', bigyellow)
 	cv.imshow('Green', biggreen)
 	cv.imshow('White',bigwhite - bigyellow)
+	cv.imshow('Black',bigblack)
 
 	#cv.imshow('Black and White', bw)
 
