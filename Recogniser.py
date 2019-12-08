@@ -229,9 +229,9 @@ while(True):
 
 
 
-	_ , bw = cv.threshold(gray, 90, 255, cv.THRESH_BINARY) ## Will try and correct for lighting:  + cv.THRESH_OTSU
+	_ , bigwhite = cv.threshold(gray, 150, 255, cv.THRESH_BINARY) ## Will try and correct for lighting:  + cv.THRESH_OTSU
 
-	contours , _ = cv.findContours(bw, cv.RETR_LIST, cv.CHAIN_APPROX_NONE)
+	#contours , _ = cv.findContours(bw, cv.RETR_LIST, cv.CHAIN_APPROX_NONE)
 	center = 0    
 
 	# for i, c in enumerate(contours):
@@ -261,17 +261,18 @@ while(True):
 	    
 	#     #bw[center[1],center[0]] = 100
 	#     position = Float32MultiArray()
-	#     if center != 0:
+	#     if center != 0:Za	
 	#         position.data = [center[0],center[1],angle,angle2,newx,newy]
 	#         posepub.publish(position)
 
 
 	cv.imshow('Original',src)
 	cv.imshow('Cyan', bigcyan)
-	cv.imshow('Red', greyedred - greyedblue - greyedgreen)
-	cv.imshow('Green', biggreen)
 	cv.imshow('Yellow', bigyellow)
-	cv.imshow('Black and White', bw)
+	cv.imshow('Green', biggreen)
+	cv.imshow('White',bigwhite - bigyellow)
+
+	#cv.imshow('Black and White', bw)
 
 cap.release()
 cv.destroyAllWindows()
