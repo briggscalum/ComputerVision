@@ -65,7 +65,7 @@ cap = cv.VideoCapture(0)
 # cap.set(cv.CAP_PROP_FRAME_HEIGHT,3120)
 # cap.set(cv.CAP_PROP_FOURCC, cv.VideoWriter_fourcc(*'MJPG'))
 
-src = cv.imread('upside.jpg',cv.IMREAD_COLOR)
+src = cv.imread('blur.jpg',cv.IMREAD_COLOR)
 
 #while(True):
 
@@ -150,7 +150,7 @@ adjustment = 1 - (115 / average)
 
 # Corrects for Brightness
 fixed = cv.add(gray,np.array(adjustment))
-_ , bigwhite = cv.threshold(gray - preyellow , 150, 255, cv.THRESH_BINARY) ## Will try and correct for lighting:  + cv.THRESH_OTSU
+_ , bigwhite = cv.threshold(gray - preyellow , 200, 255, cv.THRESH_BINARY) ## Will try and correct for lighting:  + cv.THRESH_OTSU
 invert = -gray
 _ , bigblack = cv.threshold(invert, 210, 255, cv.THRESH_BINARY) ## Will try and correct for lighting:  + cv.THRESH_OTSU
 
@@ -208,18 +208,18 @@ for i, c in enumerate(contours):
 for i, c in enumerate(bcontours):
 	#angle, center = getOrientation(c, src)
 	area = cv.contourArea(c);
-	if area > maxarea/100:
-	    continue
+	# if area > maxarea/100:
+	#     continue
 	cv.drawContours(src, bcontours, i, (0, 0, 0), 2);
 yellowcount = 0
 yellowcenter = [0,0]
 for i, c in enumerate(ycontours):
 	area = cv.contourArea(c);
-	if area > maxarea/3 or area < maxarea/30 :
-	    continue
+	# if area > maxarea/3 or area < maxarea/30 :
+	#     continue
 	angle, center = getOrientation(c, bigyellow)
-	if((center[0] - bluecenter[0])**2 + (center[1] - bluecenter[1])**2 > maxarea*3):
-		continue
+	# if((center[0] - bluecenter[0])**2 + (center[1] - bluecenter[1])**2 > maxarea*2):
+	# 	continue
 	yellowcenter[0] = yellowcenter[0] + center[0]
 	yellowcenter[1] = yellowcenter[1] + center[1]
 	yellowcount = yellowcount + 1
@@ -234,8 +234,8 @@ closestcontour = 0
 closesti = 0
 for i, c in enumerate(wcontours):
 	area = cv.contourArea(c);
-	if area > maxarea/1 or area < maxarea/20 :
-		continue
+	# if area > maxarea/1 or area < maxarea/20 :
+	# 	continue
 	#cv.drawContours(src, wcontours, i, (100, 100, 100), 2);
 	angle, center = getOrientation(c, src) 
 	distance = (center[0] - bluecenter[0])**2 + (center[1] - bluecenter[1])**2
@@ -255,17 +255,11 @@ cv.drawContours(src, wcontours, closesti, (200, 200, 200), 2);
 cv.line(src, (bluecenter[0],bluecenter[1]), (yellowcenter[0], yellowcenter[1]), (50,100,100), 5)
 cv.line(src, (whitecenter[0],whitecenter[1]), (bluecenter[0], bluecenter[1]), (50,50,50), 5)	
 maxarea = maxarea*0.5
+cv.line(src, (whitecenter[0] - int(sqrt(maxarea)), whitecenter[1] - int(sqrt(maxarea))), ((yellowcenter[0] - int(sqrt(maxarea))), (yellowcenter[1] + int(sqrt(maxarea)))), (0,255,0), 2)
+cv.line(src, (yellowcenter[0] - int(sqrt(maxarea)), yellowcenter[1] + int(sqrt(maxarea))), ((yellowcenter[0] + int(sqrt(maxarea))), (yellowcenter[1] + int(sqrt(maxarea)))), (0,255,0), 2)
+cv.line(src, (yellowcenter[0] + int(sqrt(maxarea)), yellowcenter[1] + int(sqrt(maxarea))), ((whitecenter[0] + int(sqrt(maxarea))), (whitecenter[1] - int(sqrt(maxarea)))), (0,255,0), 2)
+cv.line(src, (whitecenter[0] + int(sqrt(maxarea)), whitecenter[1] - int(sqrt(maxarea))), ((whitecenter[0] - int(sqrt(maxarea))), (whitecenter[1] - int(sqrt(maxarea)))), (0,255,0), 2)
 
-if(whitecenter[1] < yellowcenter[1]):
-	cv.line(src, (whitecenter[0] - int(sqrt(maxarea)), whitecenter[1] - int(sqrt(maxarea))), ((yellowcenter[0] - int(sqrt(maxarea))), (yellowcenter[1] + int(sqrt(maxarea)))), (0,255,0), 2)
-	cv.line(src, (yellowcenter[0] - int(sqrt(maxarea)), yellowcenter[1] + int(sqrt(maxarea))), ((yellowcenter[0] + int(sqrt(maxarea))), (yellowcenter[1] + int(sqrt(maxarea)))), (0,255,0), 2)
-	cv.line(src, (yellowcenter[0] + int(sqrt(maxarea)), yellowcenter[1] + int(sqrt(maxarea))), ((whitecenter[0] + int(sqrt(maxarea))), (whitecenter[1] - int(sqrt(maxarea)))), (0,255,0), 2)
-	cv.line(src, (whitecenter[0] + int(sqrt(maxarea)), whitecenter[1] - int(sqrt(maxarea))), ((whitecenter[0] - int(sqrt(maxarea))), (whitecenter[1] - int(sqrt(maxarea)))), (0,255,0), 2)
-else:
-	cv.line(src, (yellowcenter[0] - int(sqrt(maxarea)), yellowcenter[1] - int(sqrt(maxarea))), ((whitecenter[0] - int(sqrt(maxarea))), (whitecenter[1] + int(sqrt(maxarea)))), (0,255,0), 2)
-	cv.line(src, (whitecenter[0] - int(sqrt(maxarea)), whitecenter[1] + int(sqrt(maxarea))), ((whitecenter[0] + int(sqrt(maxarea))), (whitecenter[1] + int(sqrt(maxarea)))), (0,255,0), 2)
-	cv.line(src, (whitecenter[0] + int(sqrt(maxarea)), whitecenter[1] + int(sqrt(maxarea))), ((yellowcenter[0] + int(sqrt(maxarea))), (yellowcenter[1] - int(sqrt(maxarea)))), (0,255,0), 2)
-	cv.line(src, (yellowcenter[0] + int(sqrt(maxarea)), yellowcenter[1] - int(sqrt(maxarea))), ((yellowcenter[0] - int(sqrt(maxarea))), (yellowcenter[1] - int(sqrt(maxarea)))), (0,255,0), 2)
 
 
 cv.imshow('Original', og)
