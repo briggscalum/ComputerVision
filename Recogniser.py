@@ -57,238 +57,141 @@ def getOrientation(pts, img):
     
     return angle, cntr
 
-def getN(img,target, angle):
-
-
-	imgN = img
-	center = [target[1],target[0]];
-
-
-	if(center[1] < 300 or center[1] > 900 or center[0] < 300 or center[0] > 700):
-	    return imgN, 0.0, 0.0 ,0.0
-
-	angle1 = 1.9 - angle
-	angle2 = 3.65 - angle
-	angle3 = 0.37 - angle
-
-	point2 = [int(round(center[0]-190*cos(angle1))), int(round(center[1]+190*sin(angle1)))]
-	point3 = [int(round(center[0]-290*cos(angle2))), int(round(center[1]+290*sin(angle2)))]
-	point4 = [int(round(center[0]-300*cos(angle3))), int(round(center[1]+300*sin(angle3)))]
-
-	img[center[0],center[1]] = 50;
-	img[point2[0],point2[1]] = 50;
-	img[point3[0],point3[1]] = 50;
-	img[point4[0],point4[1]] = 50;
-
-	bottom_left_hor = -10;
-	bottom_left_ver = -10;
-	bottom_right_ver = -10;
-	bottom_right_hor = -10;
-
-	angleout = 0;
-	newy = 0;
-	newx = 0;
-
-	state = 0
-	center = point2
-	while center[0] < 948:
-		if state == 0:
-			if  img[center[0]+1,center[1]] == 0:
-				state = 1
-		elif state == 1:
-			if img[center[0]+1, center[1]] >= 240:
-				break
-			img[center[0]+1, center[1]] = 99;
-			bottom_right_ver = bottom_right_ver + 1;
-		center = [center[0]+1,center[1]]
-	state = 0
-
-	center = point2
-	while center[1] < 1278:
-		if state == 0:
-			if img[center[0],center[1]+1] == 0:
-				state = 1
-		elif state == 1:
-			if img[center[0],center[1]+1] >= 240:
-				break
-			img[center[0],center[1]] = 99;
-			bottom_right_hor = bottom_right_hor + 1;
-		center = [center[0],center[1]+1]
-
-	state = 0
-	center = point3
-
-	while center[0] < 948:
-		if state == 0:
-			if img[center[0]+1,center[1]] == 0:
-				state = 1
-		elif state == 1:
-
-			if img[center[0]+1, center[1]] >= 240:
-				break
-			img[center[0]+1,center[1]] = 99;
-			bottom_left_ver = bottom_left_ver + 1;
-		center = [center[0]+1,center[1]]
-
-	print(bottom_left_ver)
-	print(bottom_right_ver)
-	print(bottom_right_hor)
-
-
-	angle2 = (np.arcsin((bottom_right_ver-bottom_left_ver)*0.085/30))
-	newy = ((bottom_left_ver + bottom_right_ver) / 2)
-	newx = (-bottom_right_hor + (newy)*0.4)
-
-	print("Angle, y, x")
-	print(angle2)
-	print(newy)
-	print(newx)
-	
-	if(angleout > 0.3 or angleout < -0.3):
-	
-		print("Fabric Orientation Error")
-
-	imgN = img
-	return imgN,angle2, newx, newy	
 
 
 cap = cv.VideoCapture(0)
 
 # cap.set(cv.CAP_PROP_FRAME_WIDTH,4208)
 # cap.set(cv.CAP_PROP_FRAME_HEIGHT,3120)
-
 # cap.set(cv.CAP_PROP_FOURCC, cv.VideoWriter_fourcc(*'MJPG'))
 
-while(True):
+src = cv.imread('bird0_R67_S1-95_M10.png',cv.IMREAD_COLOR)
 
-	ret, src = cap.read()
-	srcgrey = cv.cvtColor(src, cv.COLOR_BGR2GRAY)
-	ret0, thresh = cv.threshold(srcgrey, 127, 255, 0)
+#while(True):
 
-	#src = cv.resize(src,(1280,949))
-
-	if cv.waitKey(1) & 0xFF == ord('q'):
-	    break
-
-	# Check if image is loaded successfully
-	if src is None:
-	    print('Could not open or find the image: ', args.input)
-	    exit(0)
-
-	# Convert image to grayscale
-	blue = src.copy()
-	blue[:, :, 1] = 1
-	blue[:, :, 2] = 1
-
-
-	preblue =cv.cvtColor(blue, cv.COLOR_BGR2GRAY)
-	_ , bigblue = cv.threshold(preblue, 10, 255, cv.THRESH_BINARY)
-
-	red = src.copy()
-	red[:, :, 1] = 1
-	red[:, :, 0] = 1
-
-	prered =cv.cvtColor(red, cv.COLOR_BGR2GRAY)
-	_ , bigred = cv.threshold(prered, 160, 255, cv.THRESH_BINARY)
-
-	green = src.copy()
-	green[:, :, 2] = 1
-	green[:, :, 0] = 1
-
-	pregreen =cv.cvtColor(green, cv.COLOR_BGR2GRAY)
-	_ , biggreen = cv.threshold(pregreen, 160, 255, cv.THRESH_BINARY)
-	_ , littlered = cv.threshold(red, 130, 255, cv.THRESH_BINARY)
-	_ , littlegreen = cv.threshold(green, 170, 255, cv.THRESH_BINARY)
-	greyedgreen = cv.cvtColor(green, cv.COLOR_BGR2GRAY)
-	greyedred = cv.cvtColor(red, cv.COLOR_BGR2GRAY)
-	greyedblue = cv.cvtColor(blue, cv.COLOR_BGR2GRAY)
-
-
-	_, bigyellow = cv.threshold(pregreen + prered - preblue*2, 110, 255, cv.THRESH_BINARY)
-	precyan = pregreen + preblue
-	for i in range (0,len(precyan)-1):
-		for j in range (0,len(precyan[i])-1):
-			if(precyan[i][j] > prered[i][j]*2):
-				precyan[i][j] = precyan[i][j] - prered[i][j]*2
-			else:
-				precyan[i][j] = 0
-	#precyan = cv.cvtColor(blue, cv.COLOR_BGR2GRAY)
-	ret, bigcyan = cv.threshold(precyan, 50, 255, 0)
-
-	# print(len(precyan[200]))
-
+	#ret, src = cap.read()
+	#print("foo")
 	
-	_, biggreen = cv.threshold(greyedgreen*0.4 - greyedred - greyedblue*0.4, 115, 255, cv.THRESH_BINARY)
-	_, bigred = cv.threshold(-greyedgreen + greyedred*2 - greyedblue, 115, 255, cv.THRESH_BINARY)
-	#bigred = (greyedred - greyedblue/2 - greyedgreen/2)
-	bigred = bigred.clip(min=0)
-	#bigcyan = cv.cvtColor(bigcyan, cv.COLOR_BGR2GRAY)
+srcgrey = cv.cvtColor(src, cv.COLOR_BGR2GRAY)
+ret0, thresh = cv.threshold(srcgrey, 127, 255, 0)
+
+#src = cv.resize(src,(1280,949))
+
+# if cv.waitKey(1) & 0xFF == ord('q'):
+#     break
+
+# Check if image is loaded successfully
+if src is None:
+    print('Could not open or find the image: ', args.input)
+    exit(0)
+
+# Convert image to grayscale
+blue = src.copy()
+blue[:, :, 1] = 1
+blue[:, :, 2] = 1
 
 
-	# bigyellow = cv.cvtColor(bigyellow, cv.COLOR_BGR2GRAY)
-	# _, bigyellow = cv.threshold(bigyellow, 200, 255, cv.THRESH_BINARY)
+preblue = cv.cvtColor(blue, cv.COLOR_BGR2GRAY)
+_ , bigblue = cv.threshold(preblue, 10, 255, cv.THRESH_BINARY)
+
+red = src.copy()
+red[:, :, 1] = 1
+red[:, :, 0] = 1
+
+prered =cv.cvtColor(red, cv.COLOR_BGR2GRAY)
+_ , bigred = cv.threshold(prered, 160, 255, cv.THRESH_BINARY)
+
+green = src.copy()
+green[:, :, 2] = 1
+green[:, :, 0] = 1
+
+pregreen =cv.cvtColor(green, cv.COLOR_BGR2GRAY)
+_ , biggreen = cv.threshold(pregreen, 160, 255, cv.THRESH_BINARY)
+_ , littlered = cv.threshold(red, 130, 255, cv.THRESH_BINARY)
+_ , littlegreen = cv.threshold(green, 170, 255, cv.THRESH_BINARY)
+greyedgreen = cv.cvtColor(green, cv.COLOR_BGR2GRAY)
+greyedred = cv.cvtColor(red, cv.COLOR_BGR2GRAY)
+greyedblue = cv.cvtColor(blue, cv.COLOR_BGR2GRAY)
 
 
-	gray = cv.cvtColor(src, cv.COLOR_BGR2GRAY)
+_, bigyellow = cv.threshold(pregreen + prered - preblue*4, 130, 255, cv.THRESH_BINARY)
+precyan = pregreen + preblue
+for i in range (len(precyan)):
+	for j in range (len(precyan[i])):
+		if(precyan[i][j] > prered[i][j]*2.5):
+			precyan[i][j] = precyan[i][j] - prered[i][j]*2.5
+		else:
+			precyan[i][j] = 0
+#precyan = cv.cvtColor(blue, cv.COLOR_BGR2GRAY)
+ret, bigcyan = cv.threshold(precyan, 20, 255, 0)
 
-	average = int(np.mean(gray))
-	if average == 0:
-		average = 115
-	adjustment = 1 - (115 / average)
-	#print(average)
-	#print(adjustment)
+_, biggreen = cv.threshold(greyedgreen*0.4 - greyedred - greyedblue*0.4, 115, 255, cv.THRESH_BINARY)
+_, bigred = cv.threshold(-greyedgreen + greyedred*2 - greyedblue, 115, 255, cv.THRESH_BINARY)
 
-	# Corrects for Brightness
-	fixed = cv.add(gray,np.array(adjustment))
+gray = cv.cvtColor(src, cv.COLOR_BGR2GRAY)
 
-
-	# print(np.shape(gray))
-	# print(np.shape(fixed))
-
-	# Convert image to binary
+average = int(np.mean(gray))
+if average == 0:
+	average = 115
+adjustment = 1 - (115 / average)
 
 
+# Corrects for Brightness
+fixed = cv.add(gray,np.array(adjustment))
+_ , bigwhite = cv.threshold(gray, 200, 255, cv.THRESH_BINARY) ## Will try and correct for lighting:  + cv.THRESH_OTSU
+invert = -gray
+_ , bigblack = cv.threshold(invert, 180, 255, cv.THRESH_BINARY) ## Will try and correct for lighting:  + cv.THRESH_OTSU
 
-	_ , bigwhite = cv.threshold(gray, 150, 255, cv.THRESH_BINARY) ## Will try and correct for lighting:  + cv.THRESH_OTSU
-	invert = -gray
-	_ , bigblack = cv.threshold(invert, 180, 255, cv.THRESH_BINARY) ## Will try and correct for lighting:  + cv.THRESH_OTSU
+contours , _ = cv.findContours(bigcyan, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+ycontours , _ = cv.findContours(bigyellow, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+wcontours , _ = cv.findContours(bigwhite, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+bcontours , _ = cv.findContours(bigblack, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+#center = 0    
+for i, c in enumerate(bcontours):
+	area = cv.contourArea(c);
+	cv.drawContours(src, bcontours, i, (0, 0, 0), 2);
+for i, c in enumerate(ycontours):
+	area = cv.contourArea(c);
+	cv.drawContours(src, ycontours, i, (0, 255, 255), 2);
+for i, c in enumerate(wcontours):
+	area = cv.contourArea(c);
+	cv.drawContours(src, wcontours, i, (255, 255, 255), 2);
 
-	contours , _ = cv.findContours(bigyellow, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
-	# 	##center = 0    
+for i, c in enumerate(contours):
+	# Calculate the area of each contour
+	area = cv.contourArea(c);
+	# Ignore contours that are too small or too large
 
-	for i, c in enumerate(contours):
-		# Calculate the area of each contour
-		area = cv.contourArea(c);
-		# Ignore contours that are too small or too large
+	# Project
+	#if area > 60000 and area < 100000 :
+	    #print(area)
+	# if area < 70000 or 1000000 < area:
+	#     continue
 
-		# Project
-		#if area > 60000 and area < 100000 :
-		    #print(area)
-		# if area < 70000 or 1000000 < area:
-		#     continue
+	# Draw each contour only for visualisation purposes
 
-		# Draw each contour only for visualisation purposes
+	# Find the orientation of each shape
+	# angle, center = getOrientation(c, src)    
 
-		# Find the orientation of each shape
-		# angle, center = getOrientation(c, src)    
+	# if(center[1] < 200 or center[1] > 900 or center[0] < 200 or center[0] > 900):
+	#     continue
 
-		# if(center[1] < 200 or center[1] > 900 or center[0] < 200 or center[0] > 900):
-		#     continue
+	#print(center)
+	cv.drawContours(src, contours, i, (255, 0, 0), 2);
 
-		#print(center)
-		cv.drawContours(src, contours, i, (0, 0, 255), 2);
+	# if center != 0:
+	#     bw,angle2,newx,newy = getN(bw,center, angle)
 
-		# if center != 0:
-		#     bw,angle2,newx,newy = getN(bw,center, angle)
+	#bw[center[1],center[0]] = 100
 
-		#bw[center[1],center[0]] = 100
+cv.imshow('Original',src)
+cv.imshow('cyan', bigcyan)
 
-	cv.imshow('Original',src)
-	cv.imshow('cyan', bigcyan)
-	cv.imshow('Yellow', bigyellow)
-	cv.imshow('Green', biggreen)
-	cv.imshow('White',bigwhite - bigyellow)
-	cv.imshow('Black',bigblack)
+cv.imshow('Green', biggreen)
+cv.imshow('White',bigwhite - bigyellow)
+cv.imshow('Black',bigblack)
+cv.imshow('Yellow', bigyellow)
+cv.waitKey(0)
 
 	#cv.imshow('Black and White', bw)
 
