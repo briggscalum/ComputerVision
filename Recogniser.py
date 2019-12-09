@@ -162,6 +162,8 @@ cap = cv.VideoCapture(0)
 while(True):
 
 	ret, src = cap.read()
+	srcgrey = cv.cvtColor(src, cv.COLOR_BGR2GRAY)
+	ret0, thresh = cv.threshold(srcgrey, 127, 255, 0)
 
 	#src = cv.resize(src,(1280,949))
 
@@ -175,22 +177,26 @@ while(True):
 
 	# Convert image to grayscale
 	blue = src.copy()
-	blue[:, :, 1] = 0
-	blue[:, :, 2] = 0
+	blue[:, :, 1] = 1
+	blue[:, :, 2] = 1
 
-	_ , bigblue = cv.threshold(blue, 160, 255, cv.THRESH_BINARY)
+
+	preblue =cv.cvtColor(blue, cv.COLOR_BGR2GRAY)
+	_ , bigblue = cv.threshold(preblue, 10, 255, cv.THRESH_BINARY)
 
 	red = src.copy()
-	red[:, :, 1] = 0
-	red[:, :, 0] = 0
+	red[:, :, 1] = 1
+	red[:, :, 0] = 1
 
-	_ , bigred = cv.threshold(red, 160, 255, cv.THRESH_BINARY)
+	prered =cv.cvtColor(red, cv.COLOR_BGR2GRAY)
+	_ , bigred = cv.threshold(prered, 160, 255, cv.THRESH_BINARY)
 
 	green = src.copy()
-	green[:, :, 2] = 0
-	green[:, :, 0] = 0
+	green[:, :, 2] = 1
+	green[:, :, 0] = 1
 
-	_ , biggreen = cv.threshold(green, 160, 255, cv.THRESH_BINARY)
+	pregreen =cv.cvtColor(green, cv.COLOR_BGR2GRAY)
+	_ , biggreen = cv.threshold(pregreen, 160, 255, cv.THRESH_BINARY)
 	_ , littlered = cv.threshold(red, 130, 255, cv.THRESH_BINARY)
 	_ , littlegreen = cv.threshold(green, 170, 255, cv.THRESH_BINARY)
 	greyedgreen = cv.cvtColor(green, cv.COLOR_BGR2GRAY)
@@ -198,12 +204,26 @@ while(True):
 	greyedblue = cv.cvtColor(blue, cv.COLOR_BGR2GRAY)
 
 
-	_, bigyellow = cv.threshold(greyedgreen + greyedred - greyedblue*2, 110, 255, cv.THRESH_BINARY)
-	_, bigcyan = cv.threshold(greyedgreen + greyedblue - greyedred*1.5, 50, 255, cv.THRESH_BINARY)
+	_, bigyellow = cv.threshold(pregreen + prered - preblue*2, 110, 255, cv.THRESH_BINARY)
+	precyan = pregreen + preblue
+	for i in range (0,len(precyan)-1):
+		for j in range (0,len(precyan[i])-1):
+			if(precyan[i][j] > prered[i][j]*2):
+				precyan[i][j] = precyan[i][j] - prered[i][j]*2
+			else:
+				precyan[i][j] = 0
+	#precyan = cv.cvtColor(blue, cv.COLOR_BGR2GRAY)
+	ret, bigcyan = cv.threshold(precyan, 50, 255, 0)
+
+	# print(len(precyan[200]))
+
+	
 	_, biggreen = cv.threshold(greyedgreen*0.4 - greyedred - greyedblue*0.4, 115, 255, cv.THRESH_BINARY)
 	_, bigred = cv.threshold(-greyedgreen + greyedred*2 - greyedblue, 115, 255, cv.THRESH_BINARY)
 	#bigred = (greyedred - greyedblue/2 - greyedgreen/2)
 	bigred = bigred.clip(min=0)
+	#bigcyan = cv.cvtColor(bigcyan, cv.COLOR_BGR2GRAY)
+
 
 	# bigyellow = cv.cvtColor(bigyellow, cv.COLOR_BGR2GRAY)
 	# _, bigyellow = cv.threshold(bigyellow, 200, 255, cv.THRESH_BINARY)
@@ -231,44 +251,40 @@ while(True):
 
 	_ , bigwhite = cv.threshold(gray, 150, 255, cv.THRESH_BINARY) ## Will try and correct for lighting:  + cv.THRESH_OTSU
 	invert = -gray
-	_ , bigblack = cv.threshold(invert, 210, 255, cv.THRESH_BINARY) ## Will try and correct for lighting:  + cv.THRESH_OTSU
-	#contours , _ = cv.findContours(bw, cv.RETR_LIST, cv.CHAIN_APPROX_NONE)
-	center = 0    
+	_ , bigblack = cv.threshold(invert, 180, 255, cv.THRESH_BINARY) ## Will try and correct for lighting:  + cv.THRESH_OTSU
 
-	# for i, c in enumerate(contours):
-	#     # Calculate the area of each contour
-	#     area = cv.contourArea(c);
-	#     # Ignore contours that are too small or too large
-	    
-	#     # Project
-	#     #if area > 60000 and area < 100000 :
-	#         #print(area)
-	#     if area < 70000 or 1000000 < area:
-	#         continue
+	contours , _ = cv.findContours(bigyellow, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+	# 	##center = 0    
 
-	#     # Draw each contour only for visualisation purposes
-	    
-	#     # Find the orientation of each shape
-	#     angle, center = getOrientation(c, src)    
+	for i, c in enumerate(contours):
+		# Calculate the area of each contour
+		area = cv.contourArea(c);
+		# Ignore contours that are too small or too large
 
-	#     if(center[1] < 200 or center[1] > 900 or center[0] < 200 or center[0] > 900):
-	#         continue
+		# Project
+		#if area > 60000 and area < 100000 :
+		    #print(area)
+		# if area < 70000 or 1000000 < area:
+		#     continue
 
-	#     #print(center)
-	#     cv.drawContours(src, contours, i, (0, 0, 255), 2);
+		# Draw each contour only for visualisation purposes
 
-	#     if center != 0:
-	#         bw,angle2,newx,newy = getN(bw,center, angle)
-	    
-	#     #bw[center[1],center[0]] = 100
-	#     position = Float32MultiArray()
-	#     if center != 0:Za	
-	#         position.data = [center[0],center[1],angle,angle2,newx,newy]
-	#         posepub.publish(position)
+		# Find the orientation of each shape
+		# angle, center = getOrientation(c, src)    
 
+		# if(center[1] < 200 or center[1] > 900 or center[0] < 200 or center[0] > 900):
+		#     continue
+
+		#print(center)
+		cv.drawContours(src, contours, i, (0, 0, 255), 2);
+
+		# if center != 0:
+		#     bw,angle2,newx,newy = getN(bw,center, angle)
+
+		#bw[center[1],center[0]] = 100
 
 	cv.imshow('Original',src)
-	cv.imshow('Cyan', bigcyan)
+	cv.imshow('cyan', bigcyan)
 	cv.imshow('Yellow', bigyellow)
 	cv.imshow('Green', biggreen)
 	cv.imshow('White',bigwhite - bigyellow)
