@@ -48,13 +48,13 @@ def getOrientation(pts, img):
     cntr = (int(mean[0,0]), int(mean[0,1]))
     
     
-    cv.circle(img, cntr, 3, (255, 0, 255), 2)
-    p1 = (cntr[0] + 0.02 * eigenvectors[0,0] , cntr[1] + 0.02 * eigenvectors[0,1] )
-    p2 = (cntr[0] - 0.02 * eigenvectors[1,0] , cntr[1] - 0.02 * eigenvectors[1,1])
-    drawAxis(img, cntr, p1, (0, 255, 0), 1)
-    drawAxis(img, cntr, p2, (255, 255, 0), 5)
-    angle = atan2(eigenvectors[0,1], eigenvectors[0,0]) # orientation in radians
-    
+    cv.circle(img, cntr, 3, (255, 255, 255), 2)
+    # p1 = (cntr[0] + 0.02 * eigenvectors[0,0] , cntr[1] + 0.02 * eigenvectors[0,1] )
+    # p2 = (cntr[0] - 0.02 * eigenvectors[1,0] , cntr[1] - 0.02 * eigenvectors[1,1])
+    # drawAxis(img, cntr, p1, (0, 255, 0), 1)
+    # drawAxis(img, cntr, p2, (255, 255, 0), 5)
+    # angle = atan2(eigenvectors[0,1], eigenvectors[0,0]) # orientation in radians
+    angle = 1
     return angle, cntr
 
 
@@ -65,11 +65,11 @@ cap = cv.VideoCapture(0)
 # cap.set(cv.CAP_PROP_FRAME_HEIGHT,3120)
 # cap.set(cv.CAP_PROP_FOURCC, cv.VideoWriter_fourcc(*'MJPG'))
 
-src = cv.imread('bird0_R67_S1-95_M10.png',cv.IMREAD_COLOR)
+src = cv.imread('Duck3.jpg',cv.IMREAD_COLOR)
 
 #while(True):
 
-	#ret, src = cap.read()
+#ret, src = cap.read()
 	#print("foo")
 	
 srcgrey = cv.cvtColor(src, cv.COLOR_BGR2GRAY)
@@ -114,21 +114,32 @@ greyedred = cv.cvtColor(red, cv.COLOR_BGR2GRAY)
 greyedblue = cv.cvtColor(blue, cv.COLOR_BGR2GRAY)
 
 
-_, bigyellow = cv.threshold(pregreen + prered - preblue*4, 130, 255, cv.THRESH_BINARY)
-precyan = pregreen + preblue
+preyellow = pregreen + prered 
+precyan = pregreen + preblue*2
+
+
 for i in range (len(precyan)):
 	for j in range (len(precyan[i])):
+		if(preyellow[i][j] > preblue[i][j]*4):
+			preyellow[i][j] = preyellow[i][j] - preblue[i][j]*4
+		else:
+			preyellow[i][j] = 0
 		if(precyan[i][j] > prered[i][j]*2.5):
 			precyan[i][j] = precyan[i][j] - prered[i][j]*2.5
 		else:
 			precyan[i][j] = 0
 #precyan = cv.cvtColor(blue, cv.COLOR_BGR2GRAY)
-ret, bigcyan = cv.threshold(precyan, 20, 255, 0)
-
+ret, bigcyan = cv.threshold(precyan, 40, 255, 0)
+ret, bigyellow = cv.threshold(preyellow, 100, 255, 0)
+# _, bigyellow = cv.threshold(pregreen + prered - preblue*4, 130, 255, cv.THRESH_BINARY)
 _, biggreen = cv.threshold(greyedgreen*0.4 - greyedred - greyedblue*0.4, 115, 255, cv.THRESH_BINARY)
 _, bigred = cv.threshold(-greyedgreen + greyedred*2 - greyedblue, 115, 255, cv.THRESH_BINARY)
 
+
+gray = src.copy()
+
 gray = cv.cvtColor(src, cv.COLOR_BGR2GRAY)
+gray = gray
 
 average = int(np.mean(gray))
 if average == 0:
@@ -138,28 +149,43 @@ adjustment = 1 - (115 / average)
 
 # Corrects for Brightness
 fixed = cv.add(gray,np.array(adjustment))
-_ , bigwhite = cv.threshold(gray, 200, 255, cv.THRESH_BINARY) ## Will try and correct for lighting:  + cv.THRESH_OTSU
+_ , bigwhite = cv.threshold(gray , 200, 255, cv.THRESH_BINARY) ## Will try and correct for lighting:  + cv.THRESH_OTSU
 invert = -gray
-_ , bigblack = cv.threshold(invert, 180, 255, cv.THRESH_BINARY) ## Will try and correct for lighting:  + cv.THRESH_OTSU
+_ , bigblack = cv.threshold(invert, 210, 255, cv.THRESH_BINARY) ## Will try and correct for lighting:  + cv.THRESH_OTSU
 
 contours , _ = cv.findContours(bigcyan, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
 ycontours , _ = cv.findContours(bigyellow, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
+bigwhiter = bigwhite - bigyellow
 wcontours , _ = cv.findContours(bigwhite, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
 bcontours , _ = cv.findContours(bigblack, cv.RETR_TREE, cv.CHAIN_APPROX_SIMPLE)
 #center = 0    
-for i, c in enumerate(bcontours):
-	area = cv.contourArea(c);
-	cv.drawContours(src, bcontours, i, (0, 0, 0), 2);
-for i, c in enumerate(ycontours):
-	area = cv.contourArea(c);
-	cv.drawContours(src, ycontours, i, (0, 255, 255), 2);
-for i, c in enumerate(wcontours):
-	area = cv.contourArea(c);
-	cv.drawContours(src, wcontours, i, (255, 255, 255), 2);
+
+maxarea = 0
+angle = 0
+center = 0
 
 for i, c in enumerate(contours):
 	# Calculate the area of each contour
-	area = cv.contourArea(c);
+	area = cv.contourArea(c)
+	if area > maxarea:
+		maxarea = area
+bluecenter = 0
+for i, c in enumerate(contours):
+	# Calculate the area of each contour
+	area = cv.contourArea(c)
+	if area == maxarea:
+		cv.drawContours(src, contours, i, (255, 0, 0), 2)
+		angle, center = getOrientation(c, src) 
+		bluecenter = center
+		area = area*2
+		print(center)
+		cv.line(src, (center[0] - int(sqrt(area)), center[1] - int(sqrt(area))), ((center[0] - int(sqrt(area))), (center[1] + int(sqrt(area)))), (0,255,0), 10)
+		cv.line(src, (center[0] - int(sqrt(area)), center[1] + int(sqrt(area))), ((center[0] + int(sqrt(area))), (center[1] + int(sqrt(area)))), (0,255,0), 10)
+		cv.line(src, (center[0] + int(sqrt(area)), center[1] + int(sqrt(area))), ((center[0] + int(sqrt(area))), (center[1] - int(sqrt(area)))), (0,255,0), 10)
+		cv.line(src, (center[0] + int(sqrt(area)), center[1] - int(sqrt(area))), ((center[0] - int(sqrt(area))), (center[1] - int(sqrt(area)))), (0,255,0), 10)
+
+
+
 	# Ignore contours that are too small or too large
 
 	# Project
@@ -177,20 +203,67 @@ for i, c in enumerate(contours):
 	#     continue
 
 	#print(center)
-	cv.drawContours(src, contours, i, (255, 0, 0), 2);
+	
 
 	# if center != 0:
 	#     bw,angle2,newx,newy = getN(bw,center, angle)
 
 	#bw[center[1],center[0]] = 100
 
-cv.imshow('Original',src)
-cv.imshow('cyan', bigcyan)
+for i, c in enumerate(bcontours):
+	#angle, center = getOrientation(c, src)
+	area = cv.contourArea(c);
+	if area > maxarea/100:
+	    continue
+	cv.drawContours(src, bcontours, i, (0, 0, 0), 2);
+yellowcount = 0
+yellowcenter = [0,0]
+for i, c in enumerate(ycontours):
+	area = cv.contourArea(c);
+	if area > maxarea/3 or area < maxarea/30 :
+	    continue
+	angle, center = getOrientation(c, bigyellow)
+	yellowcenter[0] = yellowcenter[0] + center[0]
+	yellowcenter[1] = yellowcenter[1] + center[1]
+	yellowcount = yellowcount + 1
+	area = cv.contourArea(c);
+	cv.drawContours(src, ycontours, i, (0, 255, 255), 2);
+#print(yellowcount)
+yellowcenter = (int(yellowcenter[0]/yellowcount),int(yellowcenter[1]/yellowcount))
+# cv.circle(src, yellowcenter, 1, (0, 255, 255), 10) 
 
+closest = 1000000
+closestcontour = 0
+closesti = 0
+for i, c in enumerate(wcontours):
+	area = cv.contourArea(c);
+	if area > maxarea/1 or area < maxarea/100 :
+		continue
+	#cv.drawContours(src, wcontours, i, (100, 100, 100), 2);
+	angle, center = getOrientation(c, src) 
+	distance = (center[0] - bluecenter[0])**2 + (center[1] - bluecenter[1])**2
+	#print(distance)
+	if distance < closest:
+		closest = distance
+		closestcontour = c
+		closesti = i
+
+angle, whitecenter = getOrientation(closestcontour, src) 
+print(whitecenter)
+cv.drawContours(src, wcontours, closesti, (200, 200, 200), 2);
+
+cv.line(src, (bluecenter[0],bluecenter[1]), (yellowcenter[0], yellowcenter[1]), (50,100,100), 5)
+cv.line(src, (whitecenter[0],whitecenter[1]), (bluecenter[0], bluecenter[1]), (50,50,50), 5)		
+
+
+
+cv.imshow('cyan', bigcyan)
 cv.imshow('Green', biggreen)
-cv.imshow('White',bigwhite - bigyellow)
+cv.imshow('White',bigwhite)
 cv.imshow('Black',bigblack)
 cv.imshow('Yellow', bigyellow)
+cv.imshow('grey', gray)
+cv.imshow('Original',src)
 cv.waitKey(0)
 
 	#cv.imshow('Black and White', bw)
